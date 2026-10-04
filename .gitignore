@@ -2,7 +2,7 @@
 # Secrets (wallet key, Infura ID)
 .env
 # Dataset and dataset-derived media (Celeb-DF rules: no redistribution)
-data/
+/data/
 Demo/
 test_images/
 /*.jpg

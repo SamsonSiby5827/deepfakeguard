@@ -1,0 +1,118 @@
+# DeepfakeGuard
+
+**Detects deepfake faces in images and videos, and lets you register a file's fingerprint on the Ethereum blockchain so anyone can later check it hasn't been altered.**
+
+BSc (Hons) Computer Science final-year project, University of West London (RAK campus), 2026.
+
+---
+
+## What it does
+
+- **Image check:** upload one or many images. The app finds the face, crops it, and a trained model says *real* or *fake* with a confidence score.
+- **Video check:** upload one or many videos. The app samples up to 24 frames, skips frames with no face, blurry faces or tiny faces, and combines the remaining frame predictions into one verdict.
+- **Quality warnings:** if no face is found, the face is very small, or the image is blurry, the result is marked as less reliable instead of pretending to be certain.
+- **Blockchain verification:** the app computes a SHA-256 fingerprint of the file and can register it on a smart contract (Ethereum Sepolia testnet). Later, anyone can check whether the exact same file was registered and when.
+
+## How it works
+
+```mermaid
+flowchart LR
+    A[Image or video upload] --> B[Face detection<br/>OpenCV Haar cascade]
+    B --> C[Crop + resize face<br/>224 x 224]
+    C --> D[EfficientNetB0 classifier<br/>TensorFlow / Keras]
+    D --> E[Real / Fake + confidence]
+    A --> F[SHA-256 file hash]
+    F --> G[Smart contract<br/>MediaHashRegistry on Sepolia]
+    G --> H[Registered? When? By whom?]
+```
+
+For videos, frames are sampled evenly across the clip. A video is marked fake if the average fake probability is at least 55% or at least 60% of the valid frames are classified fake.
+
+## Results
+
+Model trained on the **Celeb-DF (v2)** dataset with transfer learning (EfficientNetB0). The data was split **by video, not by frame** (70/15/15), so frames from the same video never appear in both training and testing. This prevents the model from "memorising" people and inflating the score.
+
+| Model version | Input | Held-out test accuracy | Fake recall |
+|---|---|---|---|
+| V1 | Full frame | 64% | 0.53 |
+| **V2 (used in the app)** | **Face crop** | **80%** | **0.78** |
+
+V2 was evaluated on 2,416 held-out test images.
+
+**What I learned along the way**
+
+- Cropping to the face, instead of using the whole frame, was the single biggest improvement (64% → 80%).
+- An experimental V3 model scored **88% offline** but labelled more than half of fake images as real when tested live in the app, so I **rejected it** and kept V2. Offline scores are not the whole story.
+- In final live testing of the app, it classified 37 of 40 images and 17 of 19 analysed videos correctly (a small, hand-picked test set, so treat this as a sanity check, not a benchmark).
+
+## Tech stack
+
+| Area | Tools |
+|---|---|
+| Machine learning | TensorFlow / Keras (EfficientNetB0 transfer learning), NumPy |
+| Computer vision | OpenCV (face detection, cropping, blur check, video frame sampling) |
+| Web app | Flask, HTML/CSS (Jinja templates) |
+| Blockchain | Solidity smart contract, Web3.py, Ethereum Sepolia testnet |
+| Other | SHA-256 hashing, python-dotenv |
+
+## Project structure
+
+```
+deepfakeguard/
+├── app.py                     # Flask web app: routes for images, videos, batches, blockchain
+├── src/
+│   ├── ml/
+│   │   ├── deepfake_inference.py   # Face crop + model prediction for one image
+│   │   └── video_inference.py      # Frame sampling, quality filters, video verdict
+│   ├── data/                       # Celeb-DF preparation and frame extraction
+│   ├── blockchain/
+│   │   ├── contract.sol            # MediaHashRegistry smart contract
+│   │   ├── contract_abi.json
+│   │   └── web3_client.py          # Register / look up file hashes
+│   └── utils/hashing.py            # SHA-256 file fingerprint
+├── scripts/                   # Dataset preparation scripts
+├── configs/                   # Dataset split and frame extraction settings
+├── templates/                 # Web pages
+├── requirements.txt
+└── .env.example               # Blockchain settings template (no real keys)
+```
+
+## Run it locally
+
+> **Model weights are not in this repository** (they will be published on Hugging Face). Until then the app cannot start without the `models/image_classifier_v2/` folder.
+
+Requires **Python 3.10 or newer**.
+
+```bash
+git clone https://github.com/SamsonSiby5827/deepfakeguard.git
+cd deepfakeguard
+python -m venv venv
+venv\Scripts\activate          # Windows  (macOS/Linux: source venv/bin/activate)
+pip install -r requirements.txt
+python app.py
+```
+
+Then open the address shown in the terminal (usually http://127.0.0.1:5000).
+
+**Blockchain is optional.** To enable it, copy `.env.example` to `.env` and fill in your own Sepolia RPC URL, deployed contract address and a **test wallet** private key. Never commit `.env`.
+
+## Limitations
+
+- Trained on one dataset (Celeb-DF). Accuracy on other deepfake methods or real-world social media videos is likely lower.
+- Face detection uses a simple Haar cascade, which misses side-on or partly covered faces.
+- Batch results are kept in memory, so they disappear when the app restarts.
+
+## Roadmap
+
+- [ ] Publish model weights and a model card on Hugging Face
+- [ ] Live demo on Hugging Face Spaces
+- [ ] Rebuild the API with FastAPI and package it with Docker
+- [ ] Automated tests and GitHub Actions
+
+## Dataset and ethics
+
+The Celeb-DF dataset is used for research only and is **not redistributed** in this repository. No dataset images or videos are included. This tool gives a probability, not proof: it should support human judgement, not replace it.
+
+## Author
+
+**Samson Siby** · [LinkedIn](https://www.linkedin.com/in/samson-siby-046219295) · [GitHub](https://github.com/SamsonSiby5827)
