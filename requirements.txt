@@ -1,0 +1,7 @@
+flask
+numpy
+tensorflow
+opencv-python
+mediapipe==0.10.21
+web3
+python-dotenv

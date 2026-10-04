@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepfakeGuard</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-main: #071120;
+            --bg-secondary: #0b1c36;
+            --panel-bg: rgba(10, 21, 40, 0.88);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-soft: #cbd5e1;
+            --text-muted: #94a3b8;
+            --blue-main: #2563eb;
+            --blue-light: #38bdf8;
+            --cyan-main: #06b6d4;
+            --shadow-main: 0 22px 50px rgba(0, 0, 0, 0.4);
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background:
+                radial-gradient(circle at left top, rgba(37, 99, 235, 0.18), transparent 30%),
+                radial-gradient(circle at right top, rgba(6, 182, 212, 0.18), transparent 28%),
+                linear-gradient(135deg, var(--bg-main), var(--bg-secondary));
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        .page-wrapper {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .navbar {
+            width: 100%;
+            padding: 18px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(7, 17, 32, 0.78);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .brand {
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 0.2px;
+        }
+
+        .brand span {
+            color: var(--blue-light);
+        }
+
+        .nav-subtitle {
+            color: var(--text-soft);
+            font-size: 14px;
+        }
+
+        .main-content {
+            width: 100%;
+            max-width: 1360px;
+            margin: 0 auto;
+            padding: 40px 20px 50px;
+            flex: 1;
+        }
+
+        .hero-section {
+            max-width: 980px;
+            margin: 0 auto 26px;
+            text-align: center;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 10px 16px;
+            border-radius: 999px;
+            background: rgba(37, 99, 235, 0.16);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            color: #93c5fd;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 18px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 50px;
+            line-height: 1.15;
+            color: var(--text-main);
+        }
+
+        .subtitle {
+            margin: 18px auto 0;
+            max-width: 900px;
+            font-size: 18px;
+            line-height: 1.7;
+            color: var(--text-soft);
+        }
+
+        .upload-sections {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 26px;
+            margin: 36px 0 34px;
+        }
+
+        .upload-panel {
+            background: rgba(18, 32, 58, 0.78);
+            border: 2px dashed rgba(56, 189, 248, 0.45);
+            border-radius: 24px;
+            box-shadow: var(--shadow-main);
+            padding: 38px 22px;
+            text-align: center;
+        }
+
+        .upload-panel-inner {
+            max-width: 540px;
+            margin: 0 auto;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 14px;
+        }
+
+        .upload-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #f8fafc;
+        }
+
+        .upload-subtitle {
+            font-size: 15px;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .hidden-file-input {
+            display: none;
+        }
+
+        .choose-file-wrap {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .choose-file-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 210px;
+            padding: 16px 22px;
+            background: #f8fafc;
+            color: #111827;
+            border: none;
+            border-radius: 14px 0 0 14px;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.15s ease, opacity 0.2s ease;
+        }
+
+        .choose-file-btn:hover {
+            transform: translateY(-1px);
+            opacity: 0.96;
+        }
+
+        .selected-file-box {
+            min-width: 250px;
+            max-width: 320px;
+            padding: 16px 18px;
+            background: rgba(255,255,255,0.06);
+            color: var(--text-soft);
+            border: 1px solid rgba(255,255,255,0.10);
+            border-left: none;
+            border-radius: 0 14px 14px 0;
+            text-align: left;
+            font-size: 14px;
+            word-break: break-word;
+            min-height: 54px;
+            display: flex;
+            align-items: center;
+        }
+
+        .browse-hint {
+            color: var(--text-muted);
+            font-size: 15px;
+            margin-bottom: 20px;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, var(--blue-main), var(--cyan-main));
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 15px 30px;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.15s ease, opacity 0.2s ease;
+            box-shadow: 0 12px 26px rgba(37, 99, 235, 0.30);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-1px);
+            opacity: 0.96;
+        }
+
+        .supported-text {
+            margin-top: 18px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .error-box {
+            max-width: 980px;
+            margin: 12px auto 24px;
+            background: rgba(220, 38, 38, 0.12);
+            color: #fecaca;
+            border: 1px solid rgba(220, 38, 38, 0.35);
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .info-section {
+            max-width: 1360px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 26px;
+            align-items: start;
+        }
+
+        .info-left,
+        .info-right {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 20px;
+            padding: 26px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+        }
+
+        .info-heading {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 14px;
+        }
+
+        .info-text {
+            font-size: 18px;
+            color: var(--text-soft);
+            line-height: 1.8;
+        }
+
+        .bullet-list {
+            margin: 0;
+            padding-left: 0;
+            list-style: none;
+        }
+
+        .bullet-list li {
+            margin-bottom: 18px;
+            color: var(--text-soft);
+            line-height: 1.6;
+            font-size: 17px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .bullet-icon {
+            color: #22c55e;
+            font-weight: bold;
+            margin-top: 1px;
+        }
+
+        .footer-note {
+            max-width: 1360px;
+            margin: 22px auto 0;
+            text-align: center;
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        @media (max-width: 1100px) {
+            .upload-sections {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 980px) {
+            h1 {
+                font-size: 36px;
+            }
+
+            .info-section {
+                grid-template-columns: 1fr;
+            }
+
+            .choose-file-wrap {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .choose-file-btn {
+                border-radius: 14px;
+                min-width: 220px;
+            }
+
+            .selected-file-box {
+                border-left: 1px solid rgba(255,255,255,0.10);
+                border-radius: 14px;
+                width: 100%;
+                max-width: 520px;
+                justify-content: center;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                gap: 8px;
+                text-align: center;
+            }
+
+            .main-content {
+                padding: 30px 14px 40px;
+            }
+
+            .upload-panel {
+                padding: 32px 16px;
+            }
+
+            .upload-title {
+                font-size: 24px;
+            }
+
+            .info-heading {
+                font-size: 24px;
+            }
+
+            .info-text,
+            .bullet-list li {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-wrapper">
+        <div class="navbar">
+            <div class="brand">Deepfake<span>Guard</span></div>
+            <div class="nav-subtitle">AI Detection + Blockchain Media Verification</div>
+        </div>
+
+        <div class="main-content">
+            <div class="hero-section">
+                <div class="badge">Local Prototype System</div>
+                <h1>AI-Powered Deepfake Detection and Blockchain-Based Media Authentication</h1>
+                <div class="subtitle">
+                    Upload image files for single-image or multi-image analysis, or upload one or more videos
+                    to analyze sampled frames using the same deepfake detection model.
+                </div>
+            </div>
+
+            {% if error %}
+                <div class="error-box">{{ error }}</div>
+            {% endif %}
+
+            <div class="upload-sections">
+                <form action="/predict" method="post" enctype="multipart/form-data">
+                    <div class="upload-panel">
+                        <div class="upload-panel-inner">
+                            <div class="upload-icon">🖼️</div>
+                            <div class="upload-title">Image Analysis</div>
+                            <div class="upload-subtitle">
+                                Upload one or more image files for fake/real prediction, face crop analysis,
+                                and blockchain verification.
+                            </div>
+
+                            <input
+                                id="image"
+                                class="hidden-file-input"
+                                type="file"
+                                name="image"
+                                accept=".jpg,.jpeg,.png"
+                                multiple
+                                required
+                            >
+
+                            <div class="choose-file-wrap">
+                                <label for="image" class="choose-file-btn">CHOOSE IMAGE(S)</label>
+                                <div id="selected-image-name" class="selected-file-box">No files selected</div>
+                            </div>
+
+                            <div class="browse-hint">you can select one or multiple image files</div>
+
+                            <button class="submit-btn" type="submit">Analyze Image(s)</button>
+
+                            <div class="supported-text">Supported formats: JPG, JPEG, PNG</div>
+                        </div>
+                    </div>
+                </form>
+
+                <form action="/predict_video" method="post" enctype="multipart/form-data">
+                    <div class="upload-panel">
+                        <div class="upload-panel-inner">
+                            <div class="upload-icon">🎬</div>
+                            <div class="upload-title">Video Analysis</div>
+                            <div class="upload-subtitle">
+                                Upload one or more videos to sample frames across each clip and generate
+                                final video-level fake/real predictions.
+                            </div>
+
+                            <input
+                                id="video"
+                                class="hidden-file-input"
+                                type="file"
+                                name="video"
+                                accept=".mp4,.avi,.mov,.mkv,.webm"
+                                multiple
+                                required
+                            >
+
+                            <div class="choose-file-wrap">
+                                <label for="video" class="choose-file-btn">CHOOSE VIDEO(S)</label>
+                                <div id="selected-video-name" class="selected-file-box">No files selected</div>
+                            </div>
+
+                            <div class="browse-hint">you can select one or multiple video files</div>
+
+                            <button class="submit-btn" type="submit">Analyze Video(s)</button>
+
+                            <div class="supported-text">Supported formats: MP4, AVI, MOV, MKV, WEBM</div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="info-section">
+                <div class="info-left">
+                    <div class="info-heading">Deepfake Detection for Trusted Media Analysis</div>
+                    <div class="info-text">
+                        This prototype combines AI-based facial analysis and blockchain-based file verification
+                        to detect manipulated image and video content, verify registered media hashes, and extend
+                        the analysis pipeline to uploaded videos through sampled frame inference.
+                    </div>
+                </div>
+
+                <div class="info-right">
+                    <ul class="bullet-list">
+                        <li><span class="bullet-icon">✔</span><span>Uses the trained V2 face-focused deepfake model for image and video frame analysis.</span></li>
+                        <li><span class="bullet-icon">✔</span><span>Supports single-image, multi-image, single-video, and multi-video workflows.</span></li>
+                        <li><span class="bullet-icon">✔</span><span>Displays blockchain verification for both images and videos.</span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-note">
+                Built with Flask, TensorFlow, OpenCV, SHA-256 hashing, and local blockchain verification.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const imageInput = document.getElementById("image");
+        const selectedImageName = document.getElementById("selected-image-name");
+
+        imageInput.addEventListener("change", function () {
+            if (this.files && this.files.length > 0) {
+                if (this.files.length === 1) {
+                    selectedImageName.textContent = this.files[0].name;
+                } else {
+                    selectedImageName.textContent = `${this.files.length} files selected`;
+                }
+            } else {
+                selectedImageName.textContent = "No files selected";
+            }
+        });
+
+        const videoInput = document.getElementById("video");
+        const selectedVideoName = document.getElementById("selected-video-name");
+
+        videoInput.addEventListener("change", function () {
+            if (this.files && this.files.length > 0) {
+                if (this.files.length === 1) {
+                    selectedVideoName.textContent = this.files[0].name;
+                } else {
+                    selectedVideoName.textContent = `${this.files.length} files selected`;
+                }
+            } else {
+                selectedVideoName.textContent = "No files selected";
+            }
+        });
+    </script>
+</body>
+</html>

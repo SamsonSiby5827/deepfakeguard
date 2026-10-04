@@ -1,0 +1,31 @@
+# DeepfakeGuard - files Git must never upload
+# Secrets (wallet key, Infura ID)
+.env
+# Dataset and dataset-derived media (Celeb-DF rules: no redistribution)
+data/
+Demo/
+test_images/
+/*.jpg
+# Trained models (will go to Hugging Face instead)
+models/
+models_backup/
+*.keras
+*.h5
+# Backups, personal screenshots, scratch scripts
+code_backup_before_v3_switch/
+Project Evidence Screenshots/
+check_model*.py
+# Python and build clutter
+__pycache__/
+*.pyc
+venv/
+.venv/
+*.log
+node_modules/
+
+# Files the app creates while running (uploads, frames, results)
+static/uploads/
+static/video_frames/
+static/debug_faces/
+static/classified/
+static/videos/

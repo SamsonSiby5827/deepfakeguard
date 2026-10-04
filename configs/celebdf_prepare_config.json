@@ -1,0 +1,27 @@
+{
+  "source_root": "C:/Users/samso/Downloads/archive (2)",
+  "output_root": "C:/Users/samso/Desktop/deepfake-blockchain-project/data/phase2/celeb_df_v2",
+  "real_folders": [
+    "YouTube-real",
+    "Celeb-real"
+  ],
+  "fake_folders": [
+    "Celeb-synthesis"
+  ],
+  "video_extensions": [
+    ".mp4",
+    ".avi",
+    ".mov",
+    ".mkv",
+    ".webm"
+  ],
+  "random_seed": 42,
+  "split_ratios": {
+    "train": 0.70,
+    "val": 0.15,
+    "test": 0.15
+  },
+  "use_all_real_videos": true,
+  "max_real_videos": null,
+  "max_fake_videos": null
+}

@@ -1,0 +1,20 @@
+{
+  "input_manifest_dir": "C:/Users/samso/Desktop/deepfake-blockchain-project/data/phase2/celeb_df_v2/manifests",
+  "output_root": "C:/Users/samso/Desktop/deepfake-blockchain-project/data/phase2/image_datasets/celeb_df_v2_f20",
+  "debug_root": "C:/Users/samso/Desktop/deepfake-blockchain-project/data/phase2/celeb_df_v2/debug_face_crops_f20",
+  "video_extensions": [
+    ".mp4",
+    ".avi",
+    ".mov",
+    ".mkv",
+    ".webm"
+  ],
+  "sample_every_n_frames": 20,
+  "max_saved_faces_per_video": 15,
+  "face_margin_ratio": 0.18,
+  "min_detected_face_width": 40,
+  "min_detected_face_height": 40,
+  "output_size": [224, 224],
+  "save_debug_images": false,
+  "random_seed": 42
+}

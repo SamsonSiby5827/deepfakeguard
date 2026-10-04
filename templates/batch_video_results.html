@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batch Video Detection Results</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-main: #081120;
+            --bg-secondary: #0f172a;
+            --card-bg: rgba(15, 23, 42, 0.90);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-soft: #cbd5e1;
+            --text-muted: #94a3b8;
+            --blue-main: #2563eb;
+            --blue-light: #38bdf8;
+            --cyan-main: #06b6d4;
+            --green-main: #16a34a;
+            --red-main: #dc2626;
+            --shadow-main: 0 22px 48px rgba(0, 0, 0, 0.38);
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(37, 99, 235, 0.18), transparent 28%),
+                radial-gradient(circle at top right, rgba(6, 182, 212, 0.18), transparent 28%),
+                linear-gradient(135deg, var(--bg-main), var(--bg-secondary));
+            color: var(--text-main);
+        }
+
+        .page-wrapper {
+            min-height: 100vh;
+            padding: 28px 18px 50px;
+        }
+
+        .navbar {
+            width: 100%;
+            max-width: 1380px;
+            margin: 0 auto 24px;
+            padding: 18px 26px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(8, 17, 32, 0.72);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 18px;
+            box-shadow: 0 10px 26px rgba(0, 0, 0, 0.20);
+        }
+
+        .brand {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        .brand span {
+            color: var(--blue-light);
+        }
+
+        .nav-subtitle {
+            color: var(--text-soft);
+            font-size: 14px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1380px;
+            margin: 0 auto;
+        }
+
+        .summary-banner {
+            background: rgba(15, 23, 42, 0.90);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            box-shadow: var(--shadow-main);
+            padding: 24px 26px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .summary-banner h1 {
+            margin: 0 0 10px;
+            font-size: 34px;
+        }
+
+        .summary-banner p {
+            margin: 0;
+            color: var(--text-soft);
+            font-size: 17px;
+            line-height: 1.8;
+        }
+
+        .notice-box {
+            background: rgba(22, 163, 74, 0.12);
+            color: #bbf7d0;
+            border: 1px solid rgba(34, 197, 94, 0.35);
+            border-radius: 14px;
+            padding: 14px 16px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+            gap: 22px;
+        }
+
+        .result-card {
+            background: rgba(15, 23, 42, 0.90);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 22px;
+            box-shadow: var(--shadow-main);
+            padding: 20px;
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: var(--text-main);
+            word-break: break-word;
+        }
+
+        .prediction-badge {
+            display: inline-block;
+            padding: 10px 18px;
+            border-radius: 999px;
+            font-size: 20px;
+            font-weight: bold;
+            margin: 8px 0 14px;
+        }
+
+        .prediction-badge.fake {
+            background: rgba(220, 38, 38, 0.16);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            color: #fca5a5;
+        }
+
+        .prediction-badge.real {
+            background: rgba(22, 163, 74, 0.16);
+            border: 1px solid rgba(34, 197, 94, 0.35);
+            color: #86efac;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 10px 16px;
+            border-radius: 999px;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 12px 0;
+        }
+
+        .status-registered {
+            background: rgba(22, 163, 74, 0.16);
+            border: 1px solid rgba(34, 197, 94, 0.35);
+            color: #86efac;
+        }
+
+        .status-not-registered {
+            background: rgba(220, 38, 38, 0.16);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            color: #fca5a5;
+        }
+
+        .status-other {
+            background: rgba(37, 99, 235, 0.16);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            color: #93c5fd;
+        }
+
+        .status-failed {
+            background: rgba(220, 38, 38, 0.16);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            color: #fca5a5;
+        }
+
+        .detail-line {
+            margin: 8px 0;
+            color: var(--text-soft);
+            line-height: 1.6;
+            font-size: 15px;
+        }
+
+        .error-box {
+            margin-top: 10px;
+            background: rgba(220, 38, 38, 0.10);
+            border: 1px solid rgba(239, 68, 68, 0.30);
+            border-radius: 12px;
+            padding: 12px;
+            color: #fecaca;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .confidence-very-high {
+            color: #4ade80;
+            font-weight: bold;
+        }
+
+        .confidence-high {
+            color: #22c55e;
+            font-weight: bold;
+        }
+
+        .confidence-moderate {
+            color: #facc15;
+            font-weight: bold;
+        }
+
+        .confidence-low {
+            color: #fb923c;
+            font-weight: bold;
+        }
+
+        .confidence-very-low {
+            color: #f87171;
+            font-weight: bold;
+        }
+
+        .mini-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 14px;
+            margin-bottom: 14px;
+        }
+
+        .mini-stat-box {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .mini-stat-value {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .mini-stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .meta-box {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 14px;
+            margin-top: 8px;
+        }
+
+        .hash-box {
+            margin-top: 10px;
+            word-break: break-all;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 12px;
+            font-family: monospace;
+            font-size: 12px;
+            color: #dbeafe;
+        }
+
+        .preview-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 16px;
+            margin-bottom: 12px;
+        }
+
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .preview-frame {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 10px;
+        }
+
+        .preview-frame img {
+            width: 100%;
+            border-radius: 10px;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .preview-line {
+            font-size: 12px;
+            color: var(--text-soft);
+            line-height: 1.5;
+            margin: 3px 0;
+        }
+
+        .button-row {
+            margin-top: 18px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button,
+        a.action-link {
+            text-decoration: none;
+            color: white;
+            background: linear-gradient(135deg, var(--blue-main), var(--cyan-main));
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            display: inline-block;
+            transition: transform 0.15s ease, opacity 0.2s ease;
+            box-shadow: 0 10px 24px rgba(37, 99, 235, 0.25);
+        }
+
+        button:hover,
+        a.action-link:hover {
+            transform: translateY(-1px);
+            opacity: 0.95;
+        }
+
+        @media (max-width: 820px) {
+            .navbar {
+                flex-direction: column;
+                gap: 8px;
+                text-align: center;
+            }
+
+            .mini-stats {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .preview-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .mini-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-wrapper">
+        <div class="navbar">
+            <div class="brand">Deepfake<span>Guard</span></div>
+            <div class="nav-subtitle">Batch Video Detection Results</div>
+        </div>
+
+        <div class="container">
+            <div class="summary-banner">
+                <h1>Batch Video Detection Results</h1>
+                <p>
+                    {{ total_videos }} video(s) processed.
+                    {{ success_count }} succeeded, {{ failed_count }} failed,
+                    {{ fake_video_count }} predicted fake, and {{ real_video_count }} predicted real.
+                </p>
+            </div>
+
+            {% if batch_notice %}
+            <div class="notice-box">{{ batch_notice }}</div>
+            {% endif %}
+
+            <div class="results-grid">
+                {% for item in results %}
+                <div class="result-card">
+                    <div class="card-title">{{ item.video_original_filename }}</div>
+
+                    {% if item.analysis_success %}
+                        <div class="prediction-badge {{ item.predicted_label|lower }}">
+                            {{ item.predicted_label|upper }}
+                        </div>
+
+                        <div class="detail-line"><strong>Confidence:</strong> {{ item.confidence }}%</div>
+                        <div class="detail-line">
+                            <strong>Confidence Level:</strong>
+                            <span class="{{ item.confidence_band_class }}">{{ item.confidence_band }}</span>
+                        </div>
+                        <div class="detail-line"><strong>Average Fake Probability:</strong> {{ item.average_fake_probability }}%</div>
+                        <div class="detail-line"><strong>Average Real Probability:</strong> {{ item.average_real_probability }}%</div>
+                        <div class="detail-line"><strong>Fake Frame Ratio:</strong> {{ item.fake_frame_ratio_percent }}%</div>
+                        <div class="detail-line"><strong>Duration:</strong> {{ item.duration }}</div>
+                        <div class="detail-line"><strong>FPS:</strong> {{ item.fps }}</div>
+                        <div class="detail-line"><strong>Total Frames:</strong> {{ item.total_frames }}</div>
+
+                        <div class="mini-stats">
+                            <div class="mini-stat-box">
+                                <div class="mini-stat-value">{{ item.analyzed_frames_count }}</div>
+                                <div class="mini-stat-label">Frames Sampled</div>
+                            </div>
+                            <div class="mini-stat-box">
+                                <div class="mini-stat-value">{{ item.valid_frames_count }}</div>
+                                <div class="mini-stat-label">Valid Frames</div>
+                            </div>
+                            <div class="mini-stat-box">
+                                <div class="mini-stat-value">{{ item.rejected_total_count }}</div>
+                                <div class="mini-stat-label">Rejected Frames</div>
+                            </div>
+                            <div class="mini-stat-box">
+                                <div class="mini-stat-value">{{ item.fake_frame_count }}</div>
+                                <div class="mini-stat-label">Valid Fake Frames</div>
+                            </div>
+                            <div class="mini-stat-box">
+                                <div class="mini-stat-value">{{ item.real_frame_count }}</div>
+                                <div class="mini-stat-label">Valid Real Frames</div>
+                            </div>
+                            <div class="mini-stat-box">
+                                <div class="mini-stat-value">{{ item.preview_frames|length }}</div>
+                                <div class="mini-stat-label">Preview Frames</div>
+                            </div>
+                        </div>
+
+                        <div class="detail-line"><strong>Video File Hash</strong></div>
+                        <div class="hash-box">{{ item.video_hash }}</div>
+
+                        <div class="detail-line" style="margin-top: 16px;"><strong>Blockchain Verification</strong></div>
+
+                        {% if item.blockchain_registered %}
+                            <div class="status-badge status-registered">Registered on blockchain</div>
+
+                            {% if item.blockchain_record_formatted %}
+                                <div class="meta-box">
+                                    <div class="detail-line"><strong>Registered By:</strong> {{ item.blockchain_record_formatted.registered_by }}</div>
+                                    <div class="detail-line"><strong>Registered At:</strong> {{ item.blockchain_record_formatted.registered_at }}</div>
+                                </div>
+                            {% endif %}
+
+                        {% elif item.blockchain_status == "Not registered on blockchain" %}
+                            <div class="status-badge status-not-registered">Not registered on blockchain</div>
+
+                        {% elif item.blockchain_error %}
+                            <div class="status-badge status-other">Blockchain check failed</div>
+                            <div class="detail-line">{{ item.blockchain_error }}</div>
+
+                        {% else %}
+                            <div class="status-badge status-other">{{ item.blockchain_status }}</div>
+                        {% endif %}
+
+                        <div class="preview-title">Preview Frames</div>
+                        <div class="preview-grid">
+                            {% for frame in item.preview_frames %}
+                            <div class="preview-frame">
+                                <img src="/{{ frame.url }}" alt="Preview Frame">
+                                <div class="preview-line"><strong>Frame:</strong> {{ frame.frame_index }}</div>
+                                <div class="preview-line"><strong>Prediction:</strong> {{ frame.predicted_label|upper }}</div>
+                                <div class="preview-line"><strong>Confidence:</strong> {{ frame.confidence_percent }}%</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="button-row">
+                            {% if item.can_register_video %}
+                            <form action="/register_video_hash" method="post">
+                                <input type="hidden" name="filename" value="{{ item.video_internal_filename }}">
+                                <input type="hidden" name="original_filename" value="{{ item.video_original_filename }}">
+                                <input type="hidden" name="batch_id" value="{{ batch_id }}">
+                                <input type="hidden" name="return_to_batch" value="1">
+                                <button type="submit">Register Video Hash</button>
+                            </form>
+                            {% endif %}
+
+                            <form action="/view_video_result" method="post">
+                                <input type="hidden" name="filename" value="{{ item.video_internal_filename }}">
+                                <input type="hidden" name="original_filename" value="{{ item.video_original_filename }}">
+                                <input type="hidden" name="batch_id" value="{{ batch_id }}">
+                                <button type="submit">View Full Result</button>
+                            </form>
+                        </div>
+
+                    {% else %}
+                        <div class="status-badge status-failed">Analysis failed</div>
+
+                        <div class="error-box">
+                            {{ item.error_message }}
+                        </div>
+
+                        {% if item.video_hash %}
+                            <div class="detail-line" style="margin-top: 16px;"><strong>Video File Hash</strong></div>
+                            <div class="hash-box">{{ item.video_hash }}</div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="button-row" style="justify-content: center; margin-top: 30px;">
+                <a class="action-link" href="/">Analyze More Files</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
