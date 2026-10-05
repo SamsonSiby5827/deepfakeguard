@@ -1,7 +1,7 @@
 # DeepfakeGuard API - container recipe
 # Build:  docker build -t deepfakeguard-api .
 # Run:    docker run --rm -p 8000:8000 deepfakeguard-api
-# Then open http://127.0.0.1:8000/docs
+# Then open http://127.0.0.1:8000
 
 # 1. Start from a small official Linux image that already has Python 3.12
 FROM python:3.12-slim
@@ -16,10 +16,10 @@ WORKDIR /app
 COPY requirements-docker.txt .
 RUN pip install --no-cache-dir -r requirements-docker.txt
 
-# 3. Copy only what the API needs: code + the V2 model (never .env or the dataset)
+# 3. Copy only the code the API needs (never .env, the dataset or the model:
+#    the model is downloaded from Hugging Face when the container starts)
 COPY api/ api/
-COPY src/ src/
-COPY models/image_classifier_v2/ models/image_classifier_v2/
+COPY src/ml/ src/ml/
 
 # 4. Run as a normal user, not the all-powerful "root" user
 RUN useradd --create-home --uid 1000 appuser

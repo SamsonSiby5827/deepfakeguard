@@ -9,8 +9,7 @@ Demo/
 test_images/
 static/
 *.jpg
-models/*
-!models/image_classifier_v2/
+models/
 models_backup/
 code_backup_before_v3_switch/
 Project Evidence Screenshots/

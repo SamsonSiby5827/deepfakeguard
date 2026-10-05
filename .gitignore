@@ -31,3 +31,5 @@ static/classified/
 static/videos/
 
 .pytest_cache/
+
+.venv-onnx/

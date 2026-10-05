@@ -2,6 +2,8 @@
 
 [![tests](https://github.com/SamsonSiby5827/deepfakeguard/actions/workflows/tests.yml/badge.svg)](https://github.com/SamsonSiby5827/deepfakeguard/actions/workflows/tests.yml)
 
+**[Try the live demo](https://huggingface.co/spaces/Samson5827/deepfakeguard-demo)** · [Model on Hugging Face](https://huggingface.co/Samson5827/deepfakeguard-v2)
+
 **Detects deepfake faces in images and videos, and lets you register a file's fingerprint on an Ethereum-style blockchain so it can later be checked for changes.**
 
 BSc (Hons) Computer Science final-year project, University of West London (RAK campus), 2026.
@@ -63,7 +65,8 @@ V2 was evaluated on 2,416 held-out test images.
 deepfakeguard/
 ├── app.py                     # Flask web app: routes for images, videos, batches, blockchain
 ├── api/
-│   └── main.py                # FastAPI service (v2): /health and /predict/image
+│   ├── main.py                # FastAPI service (v2): /, /health, /predict/image
+│   └── static/index.html      # Upload page used by the live demo
 ├── tests/
 │   └── test_api.py            # Automated API tests (run without the real model)
 ├── src/
@@ -87,7 +90,7 @@ deepfakeguard/
 
 ## Run it locally
 
-> **Model weights are not in this repository** (they will be published on Hugging Face). Until then the app cannot start without the `models/image_classifier_v2/` folder.
+> **Model weights are not stored in this repository.** They are published on Hugging Face at [Samson5827/deepfakeguard-v2](https://huggingface.co/Samson5827/deepfakeguard-v2) (research and non-commercial use only). The API and Docker image download them automatically. The original Flask app (`app.py`) expects them in `models/image_classifier_v2/`, so download the two files from the model page into that folder first.
 
 Requires **Python 3.10 or newer**.
 
@@ -117,7 +120,8 @@ Open http://127.0.0.1:8000/docs to try it in the browser.
 
 | Endpoint | What it does |
 |---|---|
-| `GET /health` | Shows whether the server is up and the model loaded |
+| `GET /` | Simple upload page for people |
+| `GET /health` | Shows whether the server is up, the model loaded and where it came from |
 | `POST /predict/image` | Upload a JPG, PNG or WEBP (max 10 MB) and get `label`, `confidence`, `probabilities`, face box, quality scores and warnings |
 
 Example response:
@@ -144,7 +148,7 @@ docker build -t deepfakeguard-api .
 docker run --rm -p 8000:8000 deepfakeguard-api
 ```
 
-Then open http://127.0.0.1:8000/docs. The build needs the `models/image_classifier_v2/` folder locally (weights are not in this repository yet). The image is based on `python:3.12-slim`, runs as a non-root user, never includes `.env` or dataset files (see `.dockerignore`), and has a built-in health check on `/health`.
+Then open http://127.0.0.1:8000 for the upload page or http://127.0.0.1:8000/docs for the API. On first start the container downloads the model from Hugging Face. The image is based on `python:3.12-slim`, runs as a non-root user, never includes `.env` or dataset files (see `.dockerignore`), and has a built-in health check on `/health`.
 
 In testing, the container returned exactly the same predictions as the app running directly on Windows (for example fake 0.8751 and real 0.9922 on the same two test images).
 
@@ -166,8 +170,8 @@ The tests use a fake model, so they run in about a second without TensorFlow or 
 
 ## Roadmap
 
-- [ ] Publish model weights and a model card on Hugging Face
-- [ ] Live demo on Hugging Face Spaces
+- [x] Publish model weights and a model card on Hugging Face
+- [x] Live demo on Hugging Face Spaces
 - [x] FastAPI service for image checks (`api/`)
 - [x] Automated API tests with pytest
 - [x] Package with Docker
