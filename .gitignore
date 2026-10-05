@@ -29,3 +29,5 @@ static/video_frames/
 static/debug_faces/
 static/classified/
 static/videos/
+
+.pytest_cache/
