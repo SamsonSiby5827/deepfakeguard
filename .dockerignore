@@ -1,0 +1,23 @@
+# Keep the build small and keep secrets and data OUT of the image
+.env
+.env.*
+!.env.example
+.git
+.github
+data/
+Demo/
+test_images/
+static/
+*.jpg
+models/*
+!models/image_classifier_v2/
+models_backup/
+code_backup_before_v3_switch/
+Project Evidence Screenshots/
+check_model*.py
+venv/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+tests/

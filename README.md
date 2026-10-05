@@ -80,6 +80,8 @@ deepfakeguard/
 ├── configs/                   # Dataset split and frame extraction settings
 ├── templates/                 # Web pages
 ├── requirements.txt
+├── Dockerfile                 # Container recipe for the API
+├── requirements-docker.txt    # Pinned libraries for the container
 └── .env.example               # Blockchain settings template (no real keys)
 ```
 
@@ -133,6 +135,19 @@ Example response:
 }
 ```
 
+### Run the API with Docker
+
+Docker packs the API, its exact library versions and the model into one container, so it runs the same on any machine.
+
+```bash
+docker build -t deepfakeguard-api .
+docker run --rm -p 8000:8000 deepfakeguard-api
+```
+
+Then open http://127.0.0.1:8000/docs. The build needs the `models/image_classifier_v2/` folder locally (weights are not in this repository yet). The image is based on `python:3.12-slim`, runs as a non-root user, never includes `.env` or dataset files (see `.dockerignore`), and has a built-in health check on `/health`.
+
+In testing, the container returned exactly the same predictions as the app running directly on Windows (for example fake 0.8751 and real 0.9922 on the same two test images).
+
 ### Run the tests
 
 ```bash
@@ -155,7 +170,7 @@ The tests use a fake model, so they run in about a second without TensorFlow or 
 - [ ] Live demo on Hugging Face Spaces
 - [x] FastAPI service for image checks (`api/`)
 - [x] Automated API tests with pytest
-- [ ] Package with Docker
+- [x] Package with Docker
 - [x] Run the tests automatically on every push (GitHub Actions)
 - [ ] Add video checks to the API
 - [ ] Deploy the smart contract to a public testnet (Sepolia) so records can be checked by anyone
