@@ -5,3 +5,6 @@ opencv-python
 mediapipe==0.10.21
 web3
 python-dotenv
+fastapi
+uvicorn[standard]
+python-multipart

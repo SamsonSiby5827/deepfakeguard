@@ -60,6 +60,10 @@ V2 was evaluated on 2,416 held-out test images.
 ```
 deepfakeguard/
 ├── app.py                     # Flask web app: routes for images, videos, batches, blockchain
+├── api/
+│   └── main.py                # FastAPI service (v2): /health and /predict/image
+├── tests/
+│   └── test_api.py            # Automated API tests (run without the real model)
 ├── src/
 │   ├── ml/
 │   │   ├── deepfake_inference.py   # Face crop + model prediction for one image
@@ -96,6 +100,46 @@ Then open the address shown in the terminal (usually http://127.0.0.1:5000).
 
 **Blockchain is optional.** To enable it, start Ganache, deploy `src/blockchain/contract.sol` to it, then copy `.env.example` to `.env` and fill in the Ganache RPC URL, the deployed contract address and the private key of one of Ganache's **test accounts**. The client uses standard Web3.py, so it can also point at a public testnet such as Sepolia by changing `.env`. Never commit `.env`.
 
+### Run the API (v2)
+
+The same image model is also available as a JSON API built with FastAPI.
+
+```bash
+pip install -r requirements.txt
+python -m uvicorn api.main:app
+```
+
+Open http://127.0.0.1:8000/docs to try it in the browser.
+
+| Endpoint | What it does |
+|---|---|
+| `GET /health` | Shows whether the server is up and the model loaded |
+| `POST /predict/image` | Upload a JPG, PNG or WEBP (max 10 MB) and get `label`, `confidence`, `probabilities`, face box, quality scores and warnings |
+
+Example response:
+
+```json
+{
+  "label": "fake",
+  "confidence": 0.8751,
+  "probabilities": {"fake": 0.8751, "real": 0.1249},
+  "face_detected": true,
+  "face_box": [63, 13, 91, 91],
+  "blur_score": 100.67,
+  "face_area_ratio": 0.165,
+  "warnings": []
+}
+```
+
+### Run the tests
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest
+```
+
+The tests use a fake model, so they run in about a second without TensorFlow or the model weights.
+
 ## Limitations
 
 - Trained on one dataset (Celeb-DF). Accuracy on other deepfake methods or real-world social media videos is likely lower.
@@ -107,8 +151,11 @@ Then open the address shown in the terminal (usually http://127.0.0.1:5000).
 
 - [ ] Publish model weights and a model card on Hugging Face
 - [ ] Live demo on Hugging Face Spaces
-- [ ] Rebuild the API with FastAPI and package it with Docker
-- [ ] Automated tests and GitHub Actions
+- [x] FastAPI service for image checks (`api/`)
+- [x] Automated API tests with pytest
+- [ ] Package with Docker
+- [ ] Run the tests automatically on every push (GitHub Actions)
+- [ ] Add video checks to the API
 - [ ] Deploy the smart contract to a public testnet (Sepolia) so records can be checked by anyone
 
 ## Dataset and ethics
