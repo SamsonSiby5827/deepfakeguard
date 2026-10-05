@@ -1,6 +1,6 @@
 # DeepfakeGuard
 
-**Detects deepfake faces in images and videos, and lets you register a file's fingerprint on the Ethereum blockchain so anyone can later check it hasn't been altered.**
+**Detects deepfake faces in images and videos, and lets you register a file's fingerprint on an Ethereum-style blockchain so it can later be checked for changes.**
 
 BSc (Hons) Computer Science final-year project, University of West London (RAK campus), 2026.
 
@@ -11,7 +11,7 @@ BSc (Hons) Computer Science final-year project, University of West London (RAK c
 - **Image check:** upload one or many images. The app finds the face, crops it, and a trained model says *real* or *fake* with a confidence score.
 - **Video check:** upload one or many videos. The app samples up to 24 frames, skips frames with no face, blurry faces or tiny faces, and combines the remaining frame predictions into one verdict.
 - **Quality warnings:** if no face is found, the face is very small, or the image is blurry, the result is marked as less reliable instead of pretending to be certain.
-- **Blockchain verification:** the app computes a SHA-256 fingerprint of the file and can register it on a smart contract (Ethereum Sepolia testnet). Later, anyone can check whether the exact same file was registered and when.
+- **Blockchain verification:** the app computes a SHA-256 fingerprint of the file and can register it on a smart contract. I tested this on a **local Ganache blockchain** (a private practice version of Ethereum that runs on your own computer). Later, the app can check whether the exact same file was registered and when.
 
 ## How it works
 
@@ -22,7 +22,7 @@ flowchart LR
     C --> D[EfficientNetB0 classifier<br/>TensorFlow / Keras]
     D --> E[Real / Fake + confidence]
     A --> F[SHA-256 file hash]
-    F --> G[Smart contract<br/>MediaHashRegistry on Sepolia]
+    F --> G[Smart contract<br/>MediaHashRegistry on local Ganache chain]
     G --> H[Registered? When? By whom?]
 ```
 
@@ -52,7 +52,7 @@ V2 was evaluated on 2,416 held-out test images.
 | Machine learning | TensorFlow / Keras (EfficientNetB0 transfer learning), NumPy |
 | Computer vision | OpenCV (face detection, cropping, blur check, video frame sampling) |
 | Web app | Flask, HTML/CSS (Jinja templates) |
-| Blockchain | Solidity smart contract, Web3.py, Ethereum Sepolia testnet |
+| Blockchain | Solidity smart contract, Web3.py, Ganache (local Ethereum blockchain) |
 | Other | SHA-256 hashing, python-dotenv |
 
 ## Project structure
@@ -94,13 +94,14 @@ python app.py
 
 Then open the address shown in the terminal (usually http://127.0.0.1:5000).
 
-**Blockchain is optional.** To enable it, copy `.env.example` to `.env` and fill in your own Sepolia RPC URL, deployed contract address and a **test wallet** private key. Never commit `.env`.
+**Blockchain is optional.** To enable it, start Ganache, deploy `src/blockchain/contract.sol` to it, then copy `.env.example` to `.env` and fill in the Ganache RPC URL, the deployed contract address and the private key of one of Ganache's **test accounts**. The client uses standard Web3.py, so it can also point at a public testnet such as Sepolia by changing `.env`. Never commit `.env`.
 
 ## Limitations
 
 - Trained on one dataset (Celeb-DF). Accuracy on other deepfake methods or real-world social media videos is likely lower.
 - Face detection uses a simple Haar cascade, which misses side-on or partly covered faces.
 - Batch results are kept in memory, so they disappear when the app restarts.
+- Blockchain records were tested on a local Ganache chain, so they are not publicly verifiable yet.
 
 ## Roadmap
 
@@ -108,6 +109,7 @@ Then open the address shown in the terminal (usually http://127.0.0.1:5000).
 - [ ] Live demo on Hugging Face Spaces
 - [ ] Rebuild the API with FastAPI and package it with Docker
 - [ ] Automated tests and GitHub Actions
+- [ ] Deploy the smart contract to a public testnet (Sepolia) so records can be checked by anyone
 
 ## Dataset and ethics
 
