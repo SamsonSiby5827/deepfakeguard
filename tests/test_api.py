@@ -115,3 +115,41 @@ def test_returns_503_when_model_failed_to_load(monkeypatch):
         assert client.get("/health").json()["model_loaded"] is False
         response = upload(client, make_png())
     assert response.status_code == 503
+
+
+def test_home_page_is_served(monkeypatch):
+    with client_with(monkeypatch, FakeModel()) as client:
+        response = client.get("/")
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+    assert "DeepfakeGuard" in response.text
+
+
+def test_uses_local_model_files_when_present(monkeypatch, tmp_path):
+    (tmp_path / api_main.MODEL_FILENAME).write_bytes(b"fake model")
+    (tmp_path / api_main.LABELS_FILENAME).write_text("{}")
+    monkeypatch.setattr(api_main, "LOCAL_MODEL_DIR", tmp_path)
+    model_path, labels_path, source = api_main.resolve_model_files()
+    assert source == "local"
+    assert model_path == tmp_path / api_main.MODEL_FILENAME
+    assert labels_path == tmp_path / api_main.LABELS_FILENAME
+
+
+def test_downloads_from_hugging_face_when_local_files_missing(monkeypatch, tmp_path):
+    import sys
+    import types
+
+    downloaded = []
+
+    def fake_download(repo_id, filename):
+        downloaded.append((repo_id, filename))
+        return str(tmp_path / filename)
+
+    monkeypatch.setitem(sys.modules, "huggingface_hub", types.SimpleNamespace(hf_hub_download=fake_download))
+    monkeypatch.setattr(api_main, "LOCAL_MODEL_DIR", tmp_path / "missing")
+    _, _, source = api_main.resolve_model_files()
+    assert source == f"huggingface:{api_main.MODEL_REPO}"
+    assert downloaded == [
+        (api_main.MODEL_REPO, api_main.MODEL_FILENAME),
+        (api_main.MODEL_REPO, api_main.LABELS_FILENAME),
+    ]

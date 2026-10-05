@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DeepfakeGuard | Deepfake face check</title>
+<meta name="description" content="Upload a photo and DeepfakeGuard estimates whether the face is real or a face-swap deepfake. Research demo by Samson Siby.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230d1117'/%3E%3Cpath d='M32 12l16 6v12c0 11-7 19-16 22-9-3-16-11-16-22V18z' fill='none' stroke='%2367e8b5' stroke-width='4'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #f6f5f1; --surface: #ffffff; --surface-2: #eeede7; --text: #15171c; --muted: #5b606b;
+    --line: #dcdad2; --accent: #0b7a57; --accent-ink: #ffffff; --accent-soft: #e1f2ea;
+    --fake: #b42318; --fake-soft: #fdecea; --warn: #8a5a00; --warn-soft: #fff4dc;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1117; --surface: #141a22; --surface-2: #1b222c; --text: #e9e7e2; --muted: #9aa1ad;
+      --line: #262e39; --accent: #67e8b5; --accent-ink: #08130e; --accent-soft: #15302a;
+      --fake: #ff8a80; --fake-soft: #3a1714; --warn: #f5c56b; --warn-soft: #33270f;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  a { color: var(--accent); }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 16px; }
+  header { padding: 40px 0 8px; }
+  .eyebrow { font: 500 12px/1 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  h1 { font-size: clamp(30px, 5vw, 44px); line-height: 1.1; margin: 12px 0 10px; letter-spacing: -0.01em; }
+  .lead { color: var(--muted); max-width: 62ch; }
+  .notice { margin-top: 16px; display: inline-block; font-size: 13px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 28px 0; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px; min-width: 0; }
+  .card h2 { font-size: 15px; margin-bottom: 12px; }
+
+  .drop { display: block; border: 2px dashed var(--line); border-radius: 12px; padding: 28px 16px; text-align: center; cursor: pointer; transition: border-color .15s, background .15s; }
+  .drop.over, .drop:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .drop p { color: var(--muted); font-size: 14px; }
+  .drop strong { color: var(--text); }
+  #preview { display: none; width: 100%; height: auto; border-radius: 10px; margin-top: 14px; background: var(--surface-2); }
+  .btn { margin-top: 14px; width: 100%; padding: 12px; border-radius: 10px; border: 0; background: var(--accent); color: var(--accent-ink); font-weight: 600; font-size: 15px; cursor: pointer; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  .empty { color: var(--muted); font-size: 14px; }
+  .verdict { font-size: 32px; font-weight: 700; letter-spacing: -0.01em; }
+  .verdict.real { color: var(--accent); }
+  .verdict.fake { color: var(--fake); }
+  .conf { color: var(--muted); font-size: 14px; margin-top: 2px; }
+  .bar { height: 10px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin: 14px 0 6px; display: flex; }
+  .bar span { display: block; height: 100%; }
+  .bar .b-real { background: var(--accent); }
+  .bar .b-fake { background: var(--fake); }
+  .legend { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+  .warn { margin-top: 14px; background: var(--warn-soft); color: var(--warn); border-radius: 10px; padding: 10px 12px; font-size: 14px; }
+  .warn li { margin-left: 18px; }
+  .error { margin-top: 14px; background: var(--fake-soft); color: var(--fake); border-radius: 10px; padding: 10px 12px; font-size: 14px; }
+  details { margin-top: 14px; font-size: 13px; color: var(--muted); }
+  pre { margin-top: 8px; background: var(--surface-2); padding: 10px; border-radius: 8px; overflow-x: auto; font-size: 12px; color: var(--text); }
+
+  .how { margin-bottom: 28px; }
+  .how ol { margin-left: 18px; color: var(--muted); font-size: 14px; }
+  .how li { margin: 4px 0; }
+  footer { border-top: 1px solid var(--line); padding: 20px 0 40px; font-size: 13px; color: var(--muted); }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+  @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } header { padding-top: 28px; } }
+</style>
+</head>
+<body>
+<header class="wrap">
+  <p class="eyebrow">DeepfakeGuard · research demo</p>
+  <h1>Is this face real or a deepfake?</h1>
+  <p class="lead">Upload a photo with a face. The model finds the face, crops it and estimates whether it is real or a face-swap deepfake.</p>
+  <p class="notice">Research and non-commercial use only. A probability, not proof.</p>
+</header>
+
+<main class="wrap">
+  <div class="grid">
+    <section class="card">
+      <h2>1. Choose an image</h2>
+      <label class="drop" id="drop" for="file">
+        <p><strong>Click to choose</strong> or drag a photo here</p>
+        <p>JPG, PNG or WEBP, up to 10 MB</p>
+      </label>
+      <input type="file" id="file" accept="image/jpeg,image/png,image/webp" hidden>
+      <canvas id="preview" aria-label="Uploaded image preview"></canvas>
+      <button class="btn" id="check" type="button" disabled>Check image</button>
+    </section>
+
+    <section class="card" aria-live="polite">
+      <h2>2. Result</h2>
+      <div id="result"><p class="empty">Your result will appear here. Images are processed in memory and not stored.</p></div>
+    </section>
+  </div>
+
+  <section class="card how">
+    <h2>How it works</h2>
+    <ol>
+      <li>OpenCV finds the largest face and crops it with a small margin.</li>
+      <li>An EfficientNetB0 model, trained on the Celeb-DF dataset, scores the 224 × 224 face crop.</li>
+      <li>The app warns you when the face is missing, tiny or blurry, because the result is then less reliable.</li>
+    </ol>
+    <p class="empty" style="margin-top:10px">Held-out accuracy 80% (fake recall 0.78) on 2,416 test images. Trained on face-swap deepfakes only, so it is not designed for fully AI-generated images. Developers: see the <a href="/docs">API documentation</a>.</p>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Built by Samson Siby</span>
+    <a href="https://github.com/SamsonSiby5827/deepfakeguard" target="_blank" rel="noopener">Code on GitHub</a>
+    <a href="https://huggingface.co/Samson5827/deepfakeguard-v2" target="_blank" rel="noopener">Model card</a>
+    <a href="https://samsonsiby5827.github.io" target="_blank" rel="noopener">Portfolio</a>
+  </div>
+</footer>
+
+<script>
+  const fileInput = document.getElementById('file');
+  const drop = document.getElementById('drop');
+  const canvas = document.getElementById('preview');
+  const ctx = canvas.getContext('2d');
+  const checkBtn = document.getElementById('check');
+  const resultBox = document.getElementById('result');
+  let currentFile = null;
+  let currentImage = null;
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function drawPreview(box) {
+    if (!currentImage) return;
+    canvas.width = currentImage.naturalWidth;
+    canvas.height = currentImage.naturalHeight;
+    ctx.drawImage(currentImage, 0, 0);
+    if (box) {
+      const [x, y, w, h] = box;
+      ctx.lineWidth = Math.max(2, Math.round(canvas.width / 250));
+      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#0b7a57';
+      ctx.strokeRect(x, y, w, h);
+    }
+    canvas.style.display = 'block';
+  }
+
+  function chooseFile(file) {
+    if (!file) return;
+    currentFile = file;
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { currentImage = img; drawPreview(null); URL.revokeObjectURL(url); };
+    img.onerror = () => { currentImage = null; canvas.style.display = 'none'; };
+    img.src = url;
+    checkBtn.disabled = false;
+    resultBox.innerHTML = '<p class="empty">Ready. Click "Check image".</p>';
+  }
+
+  fileInput.addEventListener('change', e => chooseFile(e.target.files[0]));
+  ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', e => chooseFile(e.dataTransfer.files[0]));
+
+  checkBtn.addEventListener('click', async () => {
+    if (!currentFile) return;
+    checkBtn.disabled = true;
+    checkBtn.textContent = 'Checking…';
+    resultBox.innerHTML = '<p class="empty">Analysing the face…</p>';
+    try {
+      const form = new FormData();
+      form.append('file', currentFile);
+      const res = await fetch('predict/image', { method: 'POST', body: form });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        resultBox.innerHTML = '<div class="error">' + escapeHtml(data.detail || ('Something went wrong (' + res.status + ').')) + '</div>';
+        return;
+      }
+      drawPreview(data.face_box);
+      const isFake = data.label === 'fake';
+      const pFake = Math.round((data.probabilities.fake ?? 0) * 100);
+      const pReal = 100 - pFake;
+      let html = '<div class="verdict ' + (isFake ? 'fake' : 'real') + '">' + (isFake ? 'Likely fake' : 'Likely real') + '</div>';
+      html += '<div class="conf">Model confidence: ' + Math.round(data.confidence * 100) + '%</div>';
+      html += '<div class="bar" role="img" aria-label="' + pReal + '% real, ' + pFake + '% fake">'
+           + '<span class="b-real" style="width:' + pReal + '%"></span><span class="b-fake" style="width:' + pFake + '%"></span></div>';
+      html += '<div class="legend"><span>Real ' + pReal + '%</span><span>Fake ' + pFake + '%</span></div>';
+      if (data.warnings && data.warnings.length) {
+        html += '<div class="warn"><strong>Take this result with caution:</strong><ul>'
+             + data.warnings.map(w => '<li>' + escapeHtml(w) + '</li>').join('') + '</ul></div>';
+      }
+      html += '<details><summary>Raw API response</summary><pre>' + escapeHtml(JSON.stringify(data, null, 2)) + '</pre></details>';
+      resultBox.innerHTML = html;
+    } catch (err) {
+      resultBox.innerHTML = '<div class="error">Could not reach the server. If the demo was asleep, wait a minute and try again.</div>';
+    } finally {
+      checkBtn.disabled = false;
+      checkBtn.textContent = 'Check image';
+    }
+  });
+</script>
+</body>
+</html>

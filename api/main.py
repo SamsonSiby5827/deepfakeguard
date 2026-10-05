@@ -1,20 +1,26 @@
 """
 DeepfakeGuard API (v2).
 
-A small web service around the existing V2 image model.
-Other programs send an image to /predict/image and get a JSON answer back.
+A small web service around the V2 image model.
+- GET  /               simple upload page for people
+- POST /predict/image  JSON answer for programs
+- GET  /health         is the server up and the model loaded?
+- GET  /docs           interactive API documentation
 
 Run from the project root:
     python -m uvicorn api.main:app
-Then open http://127.0.0.1:8000/docs to try it in the browser.
+Then open http://127.0.0.1:8000
 """
 
+import os
 from contextlib import asynccontextmanager
-from typing import Dict, List, Optional
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
 
 import cv2
 import numpy as np
 from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 MAX_IMAGE_BYTES = 10 * 1024 * 1024  # 10 MB
@@ -23,6 +29,14 @@ ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp"}
 # Same quality limits the video analyser already uses.
 MIN_BLUR_SCORE = 35.0
 MIN_FACE_AREA_RATIO = 0.02
+
+# Where the model comes from: the local models/ folder if it exists,
+# otherwise it is downloaded once from Hugging Face.
+MODEL_REPO = os.getenv("MODEL_REPO", "Samson5827/deepfakeguard-v2")
+MODEL_FILENAME = "saved_model_image_classifier_v2.keras"
+LABELS_FILENAME = "labels_v2.json"
+LOCAL_MODEL_DIR = Path(__file__).resolve().parents[1] / "models" / "image_classifier_v2"
+STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 
 class ImagePrediction(BaseModel):
@@ -36,21 +50,38 @@ class ImagePrediction(BaseModel):
     warnings: List[str]
 
 
+def resolve_model_files() -> Tuple[Path, Path, str]:
+    """Return (model path, labels path, where they came from)."""
+    local_model = LOCAL_MODEL_DIR / MODEL_FILENAME
+    local_labels = LOCAL_MODEL_DIR / LABELS_FILENAME
+    if local_model.exists() and local_labels.exists():
+        return local_model, local_labels, "local"
+
+    from huggingface_hub import hf_hub_download
+
+    model_path = hf_hub_download(repo_id=MODEL_REPO, filename=MODEL_FILENAME)
+    labels_path = hf_hub_download(repo_id=MODEL_REPO, filename=LABELS_FILENAME)
+    return Path(model_path), Path(labels_path), f"huggingface:{MODEL_REPO}"
+
+
 def load_model():
     """Load the V2 image model. Imported here so tests can swap in a fake model
     without needing TensorFlow or the real weights."""
     from src.ml.deepfake_inference import DeepfakeInference
 
-    return DeepfakeInference()
+    model_path, labels_path, source = resolve_model_files()
+    app.state.model_source = source
+    return DeepfakeInference(model_path=str(model_path), labels_path=str(labels_path))
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Load the model once when the server starts, not on every request.
+    app.state.model_source = None
     try:
         app.state.model = load_model()
         app.state.model_error = None
-    except Exception as exc:  # missing weights, bad labels file, etc.
+    except Exception as exc:  # missing weights, no internet, bad labels file, etc.
         app.state.model = None
         app.state.model_error = str(exc)
     yield
@@ -58,10 +89,17 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="DeepfakeGuard API",
-    description="Checks whether the face in an image looks real or fake.",
-    version="2.0.0",
+    description="Checks whether the face in an image looks real or fake. "
+    "Research and non-commercial use only: a probability, not proof.",
+    version="2.1.0",
     lifespan=lifespan,
 )
+
+
+@app.get("/", include_in_schema=False)
+def home() -> FileResponse:
+    """The upload page people see in the browser."""
+    return FileResponse(STATIC_DIR / "index.html")
 
 
 @app.get("/health")
@@ -70,6 +108,7 @@ def health() -> dict:
     return {
         "status": "ok",
         "model_loaded": app.state.model is not None,
+        "model_source": app.state.model_source,
         "model_error": app.state.model_error,
     }
 
