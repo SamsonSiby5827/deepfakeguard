@@ -1,0 +1,26 @@
+# Runs the automated API tests on GitHub's computers every time code is
+# pushed to main or a pull request is opened. A green tick means they passed.
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install test dependencies (no TensorFlow needed, tests use a fake model)
+        run: pip install fastapi python-multipart numpy opencv-python-headless pytest httpx
+
+      - name: Run tests
+        run: python -m pytest -v

@@ -1,5 +1,7 @@
 # DeepfakeGuard
 
+[![tests](https://github.com/SamsonSiby5827/deepfakeguard/actions/workflows/tests.yml/badge.svg)](https://github.com/SamsonSiby5827/deepfakeguard/actions/workflows/tests.yml)
+
 **Detects deepfake faces in images and videos, and lets you register a file's fingerprint on an Ethereum-style blockchain so it can later be checked for changes.**
 
 BSc (Hons) Computer Science final-year project, University of West London (RAK campus), 2026.
@@ -154,7 +156,7 @@ The tests use a fake model, so they run in about a second without TensorFlow or 
 - [x] FastAPI service for image checks (`api/`)
 - [x] Automated API tests with pytest
 - [ ] Package with Docker
-- [ ] Run the tests automatically on every push (GitHub Actions)
+- [x] Run the tests automatically on every push (GitHub Actions)
 - [ ] Add video checks to the API
 - [ ] Deploy the smart contract to a public testnet (Sepolia) so records can be checked by anyone
 
