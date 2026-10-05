@@ -1,0 +1,8 @@
+# Only what the API container needs. Versions match the laptop the model was trained/saved on.
+tensorflow-cpu==2.19.1
+keras==3.13.2
+numpy==1.26.4
+opencv-python-headless==4.11.0.86
+fastapi
+uvicorn[standard]
+python-multipart
