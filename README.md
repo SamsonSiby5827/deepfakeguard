@@ -185,4 +185,4 @@ The Celeb-DF dataset is used for research only and is **not redistributed** in t
 
 ## Author
 
-**Samson Siby** · [LinkedIn](https://www.linkedin.com/in/samson-siby-046219295) · [GitHub](https://github.com/SamsonSiby5827)
+**Samson Siby** · [LinkedIn](https://www.linkedin.com/in/samson-siby) · [GitHub](https://github.com/SamsonSiby5827)
