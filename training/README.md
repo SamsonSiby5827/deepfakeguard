@@ -1,0 +1,1 @@
+Training: see training/. Data prep (face crops, video-level split) and two-stage fine-tuning of EfficientNetB0 in Google Colab. Dataset: FaceForensics++ (not included; access must be requested from its authors).
